@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",                               
+    "module": "commonjs",                             
+    "lib": [
+      "ESNext",
+      "ES6"
+    ],
+    "sourceMap": true,                             
+    "outDir": "dist",    
+    "rootDir": "src",
+    "esModuleInterop": true,   
+    "allowJs": true,                       
+    "forceConsistentCasingInFileNames": true,         
+    "strict": true,                                   
+    "skipLibCheck": true   ,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "removeComments": true,
+    "declarationDir": "dist/@types",
+    "declaration": true                      
+  }
+}

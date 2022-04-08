@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String @id @default(uuid())
+  name      String
+  username  String
+  email     String
+  password  String
+  session   String?
+  active    Boolean @default(true)
+
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Otp {
+  id        String    @id @default(uuid())
+  type      String
+  code      String
+  codeUrl   String
+  userId    String
+  secret    String
+  taskId    String
+  mailSend  Boolean?   @default(false)
+  workId    String?    @default("")
+  expireIn  Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("otps")
+}
+
+model refresh {
+  id        String    @id @default(uuid())
+  token     String
+  expireIn  Int
+  status    Boolean   @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("refresh_token")
+}

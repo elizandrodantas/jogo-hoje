@@ -1,0 +1,45 @@
+{
+  "name": "jogo-hoje",
+  "version": "0.0.1",
+  "description": "agende jogo com amigos",
+  "main": "dist/server.js",
+  "repository": "https://github.com/elizandrodantas/jogo-hoje.git",
+  "author": "Elizandro Dantas <dantaspm@hotmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^3.12.0",
+    "axios": "^0.26.1",
+    "bcrypt": "^5.0.1",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "fastq": "^1.13.0",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.29.2",
+    "node-forge": "^1.3.1",
+    "otplib": "^12.0.1",
+    "prisma": "^3.12.0",
+    "uid2": "^1.0.0",
+    "uuid": "^8.3.2"
+  },
+  "scripts": {
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules src/server.ts"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/bcrypt": "^5.0.0",
+    "@types/express": "^4.17.13",
+    "@types/jsonwebtoken": "^8.5.8",
+    "@types/moment": "^2.13.0",
+    "@types/node-forge": "^1.0.1",
+    "@types/otplib": "^10.0.0",
+    "@types/uid2": "^0.0.0",
+    "@types/uuid": "^8.3.4",
+    "ts-node-dev": "^1.1.8",
+    "typescript": "^4.6.3"
+  },
+  "prisma": {
+    "schema": "./prisma/schema.prisma"
+  }
+}

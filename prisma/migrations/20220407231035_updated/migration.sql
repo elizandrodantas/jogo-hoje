@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `otps` ADD COLUMN `mailSend` BOOLEAN NULL DEFAULT false,
+    ADD COLUMN `mailTask` VARCHAR(191) NULL DEFAULT '';
