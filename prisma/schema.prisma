@@ -43,14 +43,15 @@ model Otp {
 }
 
 model refresh {
-  id        String    @id @default(uuid())
-  token     String
-  expireIn  Int
-  status    Boolean   @default(true)
-  session   String
+  id          String    @id @default(uuid())
+  token       String
+  expireIn    Int
+  status      Boolean   @default(true)
+  userId      String
+  session     String
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   @@map("refresh_token")
 }

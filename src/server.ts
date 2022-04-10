@@ -1,7 +1,8 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { config } from 'dotenv';
 
-import { Router_i } from './routers';
+import { RouterIndex } from './routers';
+import { RouterSecure } from './routers/secure';
 
 var app = express();
           config();
@@ -9,7 +10,8 @@ var app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/', Router_i);
+app.use('/', RouterIndex);
+app.use('/api', RouterSecure)
 
 app.use((error: any, request: Request, response: Response, next: NextFunction) => {
     if(error) return response.status(500).json({error: "error request, try again"});

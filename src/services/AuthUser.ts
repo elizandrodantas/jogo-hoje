@@ -2,6 +2,8 @@ import { JsonWebToken } from "../core/JsonWebToken";
 import { Prisma } from "../database";
 import { UserBasicRepository } from "../repository/UserBasicRepository";
 
+import moment from "moment";
+
 type iPayloadAuth = {
     username: string;
     password: string;
@@ -27,7 +29,7 @@ export class AuthUser {
         let { password: hash, account_active, name, id } = user;
 
         if(!new UserBasicRepository().compareHashPassword(password, hash)) return new Error("username or password invalid");
-        if(!account_active) return new Error("user blocked");
+        if(!account_active) return new Error("account blocked");
 
         let JWT = new JsonWebToken();
 
@@ -39,6 +41,56 @@ export class AuthUser {
         Promise.all([
             JWT.updateLastSeenUser(),
             JWT.updateSessionUser()
+        ]);
+
+        return {
+            username,
+            name,
+            token: JWT.token,
+            refresh_token: JWT.refresh,
+            token_type: "bearer",
+            expire: JWT.token_expire
+        };
+    }
+
+    async refresh(token: string){
+        if(!token) return new Error("unauthorized");
+
+        let JWT = new JsonWebToken();
+
+        JWT.setRefresh(token);
+
+        let refreshData = await JWT.verifyRefreshToken();
+        if(refreshData instanceof Error) return new Error(refreshData.message);
+
+        let { expireIn, userId, id: refresh_id, status: refresh_status, session: refresh_session } = refreshData;
+
+        if(!refresh_status) return new Error("refresh_token already used");
+        if(moment().unix() > expireIn) return new Error("token expired");
+
+        JWT.setClientId(userId);
+        await JWT.setUserInfo();
+
+        let userInfo = JWT.getUserInfo();
+        if(!userInfo) return new Error("unauthorized");
+
+        let { username, name, account_active, session } = userInfo;
+
+        if(!account_active) return new Error("account blocked");
+        if(session !== refresh_session){
+            Promise.all([
+                JWT.updateBreakRefreshToken(refresh_id)
+            ]);
+            return new Error("token unsigned in last session");
+        };
+
+        JWT.signIn(userInfo);
+        await JWT.createRefreshToken();
+
+        Promise.all([
+            JWT.updateLastSeenUser(),
+            JWT.updateSessionUser(),
+            JWT.updateBreakRefreshToken(refresh_id)
         ]);
 
         return {

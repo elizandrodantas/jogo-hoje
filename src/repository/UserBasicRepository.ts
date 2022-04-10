@@ -2,6 +2,7 @@ import { User } from "@prisma/client";
 import { Prisma } from "../database";
 
 import { hashSync, compareSync } from 'bcrypt';
+import moment from "moment";
 
 interface iClassFindUser {
     byUsername(username: string): Promise<User | null>
@@ -11,6 +12,7 @@ interface iClassFindUser {
 
 type iPayloadOptionsTransformDataUserSecure = {
     mask?: boolean;
+    trust?: boolean;
 }
 
 type iResponseTransformDataUserSecure = {
@@ -30,7 +32,7 @@ export class UserBasicRepository {
     async getUserByUsername(username: string): Promise<Error | User>{
         if(!username) return new Error("user not defined");
 
-        let user = await new FindUser().byUsername(username) as any;
+        let user = await new FindUser().byUsername(username) as User;
         if(!user) return new Error("user not register");
 
         return this.lastData = user, user;
@@ -39,8 +41,17 @@ export class UserBasicRepository {
     async getUserByEmail(email: string): Promise<Error | User>{
         if(!email) return new Error("email not defined");
 
-        let user = await new FindUser().byEmail(email) as any;
+        let user = await new FindUser().byEmail(email) as User;
         if(!user) return new Error("email not register");
+
+        return this.lastData = user, user;
+    }
+
+    async getUserById(id: string){
+        if(!id) return new Error("client not identify");
+
+        let user = await new FindUser().byId(id) as User;
+        if(!user) return new Error("user not register");
 
         return this.lastData = user, user;
     }
@@ -56,21 +67,26 @@ export class UserBasicRepository {
     transformSecureShowDataUser(options?: iPayloadOptionsTransformDataUserSecure): Error | iResponseTransformDataUserSecure{
         if(!this.lastData) return new Error("user data not found");
 
-        let { active, created_at, email, id, name, username } = this.lastData;
-
-        console.log(this.lastData)
+        let { account_active, created_at, email, id, name, username, last_seen, session } = this.lastData as any;
 
         let res = {
             id,
             name,
+            email,
+            username
         } as any;
 
         if(options && options.mask){
             res.email = this.hideMaskMail(email);
             res.username = this.hideMaskHalf(username);
+        }else
+
+        if(options && options.trust){
+            res.last_seen = moment.unix(last_seen);
+            res.session = session;
         }
 
-        res.active = active;
+        res.active = account_active;
         res.created_at = created_at;
 
         return res;
