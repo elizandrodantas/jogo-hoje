@@ -8,17 +8,18 @@ datasource db {
 }
 
 model User {
-  id        String @id @default(uuid())
-  name      String
-  username  String
-  email     String
-  password  String
-  session   String?
-  active    Boolean @default(true)
+  id                String @id @default(uuid())
+  name              String
+  username          String
+  email             String
+  password          String
+  session           String?
+  last_seen         Int?
+  account_active    Boolean @default(true)
 
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
 
   @@map("users")
 }
@@ -46,6 +47,7 @@ model refresh {
   token     String
   expireIn  Int
   status    Boolean   @default(true)
+  session   String
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

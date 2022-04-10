@@ -1,3 +1,4 @@
+import { JsonWebToken } from "../core/JsonWebToken";
 import { Prisma } from "../database";
 import { UserBasicRepository } from "../repository/UserBasicRepository";
 
@@ -23,13 +24,31 @@ export class AuthUser {
         });
         if(!user) return new Error("username or password invalid");
 
-        let { password: hash, active } = user;
+        let { password: hash, account_active, name, id } = user;
 
         if(!new UserBasicRepository().compareHashPassword(password, hash)) return new Error("username or password invalid");
-        if(!active) return new Error("user blocked");
+        if(!account_active) return new Error("user blocked");
 
-        return user
+        let JWT = new JsonWebToken();
 
+        JWT.signIn(user);
+        await JWT.createRefreshToken();
+
+        JWT.setClientId(id);
+
+        Promise.all([
+            JWT.updateLastSeenUser(),
+            JWT.updateSessionUser()
+        ]);
+
+        return {
+            username,
+            name,
+            token: JWT.token,
+            refresh_token: JWT.refresh,
+            token_type: "bearer",
+            expire: JWT.token_expire
+        };
     }
 
     async already({ key, type }: iPayloadAlready){
