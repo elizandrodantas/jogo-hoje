@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 
-import { JsonWebToken } from "../core/JsonWebToken";
+import { iDecodedJsonWebToken, JsonWebToken } from "../core/JsonWebToken";
 
 let { 
     VERIFY_SESSION,
@@ -9,18 +9,22 @@ let {
 
 export class ensuredAuthenticated {
     async middler(request: Request, response: Response, next: NextFunction){
-        let { authorization } = request.headers;
+        let { authorization } = request.headers, JWT = new JsonWebToken();
 
         if(!authorization) return response.status(401).json({ error: "authorization token missing" });
-
-        let JWT = new JsonWebToken();
 
         JWT.setToken(authorization);
 
         let verifyJWT = JWT.verifyJWT();
         if(verifyJWT instanceof Error) return response.status(401).json({ error: verifyJWT.message });
 
-        let { client_id, jti } = verifyJWT;
+        request.decoded = verifyJWT;
+
+        return next();
+    }
+
+    async session(request: Request, response: Response, next: NextFunction){
+        let { client_id, jti  } = request.decoded as iDecodedJsonWebToken, JWT = new JsonWebToken();
 
         JWT.setClientId(client_id);
         await JWT.setUserInfo();
@@ -34,8 +38,6 @@ export class ensuredAuthenticated {
             let vRealTime = JWT.verifyAccountStatus();
             if(vRealTime instanceof Error) return response.status(403).json({ error: vRealTime.message });
         }
-
-        request.decoded = verifyJWT;
 
         return next();
     }

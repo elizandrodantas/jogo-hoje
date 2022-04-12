@@ -1,15 +1,13 @@
-declare global {
-    namespace Express {
-      interface Request {
-        decoded?: {
-          username: string;
-          sub: string;
-          iss: string;
-          aud: string;
-          client_id: string;
-          iat: number;
-          exp: number;
-        }
-      }
-    }
+declare namespace Express {
+  export interface Request {
+     decoded?: {
+      jti: string;
+      aud: string;
+      client_id: string;
+      username: string;
+      iss: string
+      iat: number
+      exp: number
+     }
+  }
 }

@@ -8,8 +8,9 @@ import { UserBasicRepository } from '../repository/UserBasicRepository';
 
 import uid from 'uid2';
 import moment from 'moment';
+import { RefreshTokenRepository } from '../repository/RefreshTokenRespository';
 
-type iVerifyAndDecodeJwt = {
+export type iDecodedJsonWebToken = {
     jti: string;
     aud: string;
     client_id: string;
@@ -66,13 +67,11 @@ export class JsonWebToken {
         let refresh_token = uuidv4();
 
         if(this.client_id && this.session){
-            let save = await Prisma.refresh.create({
-                data: {
-                    token: refresh_token,
-                    expireIn: this.createExpire(this.rt_expire, 'd'),
-                    userId: this.client_id,
-                    session: this.session
-                }
+            let save = await new RefreshTokenRepository().create({
+                token: refresh_token,
+                expireIn: this.createExpire(this.rt_expire, 'd'),
+                userId: this.client_id,
+                session: this.session
             });
     
             if(save) this.refresh = refresh_token;
@@ -96,10 +95,7 @@ export class JsonWebToken {
 
     async updateBreakRefreshToken(id: string): Promise<void>{
         if(id){
-            await Prisma.refresh.update({
-                where: { id },
-                data: { status: false, expireIn: 0 }
-            });
+            await new RefreshTokenRepository().invalidateToken({ id });
         }
     }
 
@@ -112,8 +108,8 @@ export class JsonWebToken {
         }
     }
 
-    verifyJWT(token?: string): Error | iVerifyAndDecodeJwt
-    verifyJWT(token: string): Error | iVerifyAndDecodeJwt{
+    verifyJWT(token?: string): Error | iDecodedJsonWebToken
+    verifyJWT(token: string): Error | iDecodedJsonWebToken{
         token = token ? token : this.token;
 
         if(!token) return new Error("token not found");
@@ -129,7 +125,7 @@ export class JsonWebToken {
         if(token.indexOf('eyJ') !== 0) return new Error("invalid token, try again");
 
         try{
-            return verify(token, this.key) as iVerifyAndDecodeJwt;
+            return verify(token, this.key) as iDecodedJsonWebToken;
         }catch(e: any){
             return new Error('unauthorized');
         }
@@ -175,28 +171,26 @@ export class JsonWebToken {
 
         if(!validateUUID(token)) return new Error("token format invalid");
 
-        let confirm = await Prisma.refresh.findFirst({
-            where: { token }
-        });
+        let confirm = await new RefreshTokenRepository().findByToken({ token });
 
-        if(!confirm) return new Error("unauthorized");
+        if(confirm instanceof Error) return new Error("unauthorized");
         
         return confirm;
     }
 
-    decode(token: string): iVerifyAndDecodeJwt | null
-    decode(token?: string): iVerifyAndDecodeJwt | null{
+    decode(token: string): iDecodedJsonWebToken | null
+    decode(token?: string): iDecodedJsonWebToken | null{
         let t = token && !this.token ? token : this.token ? this.token : !token && !this.token ? null : token; 
         if(!t) return null;
 
         if(t.indexOf('eyJ') !== 0 || t.split('.').length !== 3) return null;
 
-        return decode(t) as iVerifyAndDecodeJwt;
+        return decode(t) as iDecodedJsonWebToken;
     }
 
     async setUserInfo(): Promise<void>{
         if(this.client_id){
-            let user = await new UserBasicRepository().getUserById(this.client_id);
+            let user = await new UserBasicRepository().findById(this.client_id);
             if(typeof user === "object"){
                 this.userInfo = user as any;
             }

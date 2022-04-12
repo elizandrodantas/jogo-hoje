@@ -1,10 +1,8 @@
 import { UserBasicRepository } from "../repository/UserBasicRepository";
-
 import interfaceBodySendMailRegister, { iResponseSendMailRegister } from '../interfaces/SendMailRegister';
 import { OtpCore } from "../core/CoreOtp";
 
 import { v4 as uuidv4 } from 'uuid';
-import { Prisma } from "../database";
 import { SendMailCore } from "../middleware/SendMail";
 
 import config from '../config/mail';
@@ -23,45 +21,30 @@ export class RegisterUser {
 
         let { email, username, name, password } = validation, id = uuidv4();
 
-        let controllerCondition = new UserBasicRepository();
+        let controller = new UserBasicRepository();
 
-        // if(await controllerCondition.getUserByUsername(username)) return new Error("username already register");
-        // if(await controllerCondition.getUserByEmail(email)) return new Error("email already register");
+        // if(!(await controller.findByUsername(username) instanceof Error)) return new Error("username already register");
+        // if(!(await controller.findByEmail(email) instanceof Error)) return new Error("email already register");
 
         let createBodySendMail = interfaceBodySendMailRegister({ email, name });
 
         let controllerOTP = new OtpCore('mail');
 
-        // GENERATE CODE
         controllerOTP.createOtp().createCodeUrl().setUserId(id);
-        // ENCRYPT PASSWORD
-        password = controllerCondition.createHashPassword(password);
+        password = controller.util.createHashPassword(password);
 
-        let register = await Prisma.user.create({
-            data: {
-                id,
-                email,
-                name,
-                password,
-                username
-            }
-        }).catch(e => null);
-
-        if(!register) return new Error("error register user, try again");
-        
-        let finish = this.jobFinishCreateUser({
-            email,
-            name,
-            username
-        }, controllerOTP, createBodySendMail);
+        let register = await controller.create({ id, username, password, email, name});
+        if(register instanceof Error) return new Error("error register user, try again");
 
         Promise.all([
-            finish
+            this.jobFinishCreateUser({
+                email,
+                name,
+                username
+            }, controllerOTP, createBodySendMail)
         ]);
 
-        register.password = undefined as any;
-
-        return register;
+        return controller.util.hide(register, { all_null: true, password: true });
     }
 
     private async jobFinishCreateUser( 

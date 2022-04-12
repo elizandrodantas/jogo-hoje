@@ -5,7 +5,9 @@ import { ensuredAuthenticated } from "../middleware/ensuredAuthenticated";
 
 const app = Router();
 
-app.get('/user-info', [ new ensuredAuthenticated().middler ], new UserController().UserInfo);
+app.get('/user-info',
+    [ new ensuredAuthenticated().middler ],
+    new UserController().UserInfo);
 
 
 export { app as RouterSecure }

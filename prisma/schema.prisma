@@ -17,6 +17,7 @@ model User {
   last_seen         Int?
   account_active    Boolean @default(true)
 
+  confirmations     Confirmation[]
 
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
@@ -24,20 +25,33 @@ model User {
   @@map("users")
 }
 
-model Otp {
-  id        String    @id @default(uuid())
-  type      String
-  code      String
-  codeUrl   String
-  userId    String
-  secret    String
-  taskId    String
-  mailSend  Boolean?   @default(false)
-  workId    String?    @default("")
-  expireIn  Int
+model Confirmation {
+  id                        String   @id @default(uuid())
+  userId                    String
+  type                      String?
+  description               String?
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  confirmation              User    @relation(fields: [userId], references: [id])
+  created_at                DateTime @default(now())
+
+  @@map("users_confirmations")
+}
+
+model Otp {
+  id          String     @id @default(uuid())
+  type        String
+  code        String
+  codeUrl     String
+  userId      String
+  secret      String
+  taskId      String
+  status      Boolean     @default(true)
+  workStatus  Boolean?    @default(false)
+  workId      String?     @default("")
+  expireIn    Int
+
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
 
   @@map("otps")
 }

@@ -140,7 +140,7 @@ export class OtpCore implements iCoreOtp {
             await Prisma.otp.update({
                 where: { id },
                 data: {
-                    mailSend: true,
+                    workStatus: true,
                     workId
                 }
             });

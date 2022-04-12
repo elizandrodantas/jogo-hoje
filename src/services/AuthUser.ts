@@ -3,6 +3,7 @@ import { Prisma } from "../database";
 import { UserBasicRepository } from "../repository/UserBasicRepository";
 
 import moment from "moment";
+import { User } from "@prisma/client";
 
 type iPayloadAuth = {
     username: string;
@@ -28,7 +29,7 @@ export class AuthUser {
 
         let { password: hash, account_active, name, id } = user;
 
-        if(!new UserBasicRepository().compareHashPassword(password, hash)) return new Error("username or password invalid");
+        if(!new UserBasicRepository().util.compareHashPassword(password, hash)) return new Error("username or password invalid");
         if(!account_active) return new Error("account blocked");
 
         let JWT = new JsonWebToken();
@@ -108,10 +109,10 @@ export class AuthUser {
 
         let controller = new UserBasicRepository();
 
-        let find = type === "email" ? await controller.getUserByEmail(key) : type === "username" ? await controller.getUserByUsername(key) : null;
+        let find = type === "email" ? await controller.findByEmail(key) : type === "username" ? await controller.findByUsername(key) : null;
 
         if(!find) return new Error("user not register");
 
-        return controller.transformSecureShowDataUser({ mask: true })
+        return controller.util.transformSecureShowDataUser(controller.lastData as User, { mask: true })
     }
 }
