@@ -18,6 +18,8 @@ model User {
   account_active    Boolean @default(true)
 
   confirmations     Confirmation[]
+  events            Event?
+  event_person      EventPersons?
 
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
@@ -68,4 +70,38 @@ model refresh {
   updated_at  DateTime @updatedAt
 
   @@map("refresh_token")
+}
+
+model Event {
+  id                  String        @id  @default(uuid())
+  title               String
+  description         String?
+
+  event_user_created  String
+  event_date          Int
+  event_status        Boolean       @default(true)
+  event_location      String
+  event_min_person    Int?
+  event_max_person    Int?
+  
+  created_at          DateTime      @default(now())
+  updated_at          DateTime      @updatedAt
+
+  userEvent           User          @relation(fields: [event_user_created], references: [id])
+  persons             EventPersons[]
+
+  @@map("events")
+}
+
+model EventPersons {
+  id          String    @id  @default(cuid())
+  userId      String
+  eventId     String
+
+  created_at  DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+  event       Event     @relation(fields: [eventId], references: [id])
+
+  @@map("event_persons")
 }

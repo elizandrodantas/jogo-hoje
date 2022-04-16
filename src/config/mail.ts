@@ -10,5 +10,5 @@ export default {
     register: {
         subject: "Bem Vindo, {name}"
     },
-    url: APP_URL + '/register/'
+    url: APP_URL + '/auth/confirm/'
 }

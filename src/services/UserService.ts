@@ -1,5 +1,5 @@
 
-import { UserBasicRepository } from "../repository/UserBasicRepository";
+import { UserBasicRepository } from "../repositories/UserBasicRepository";
 
 export class UserServices {
     async getInfo(userId: string){
@@ -7,9 +7,9 @@ export class UserServices {
      
         let controllerRepository = new UserBasicRepository();
 
-        let info = await controllerRepository.getUserById(userId);
+        let info = await controllerRepository.findById(userId);
         if(info instanceof Error) return new Error("account not found");
 
-        return controllerRepository.transformSecureShowDataUser({ trust: true });
+        return controllerRepository.util.transformSecureShowDataUser(info, { trust: true });
     }
 }

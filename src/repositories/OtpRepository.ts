@@ -8,7 +8,7 @@ export class OtpCodeRespository {
     lastData: Otp | undefined;
 
     async findByCode({ code }: { code: string }){
-        if(!code) return new Error("code not defined");
+        if(!code) return new Error("code required");
 
         let get = await this.controller.byCode(code);
         if(get instanceof Error) return new Error(get.message);
@@ -16,8 +16,17 @@ export class OtpCodeRespository {
         return this.lastData = get, get;
     }
 
+    async findByCodeUrl({ code }: { code: string }){
+        if(!code) return new Error("code required");
+
+        let get = await this.controller.byCodeUrl(code);
+        if(get instanceof Error) return new Error(get.message);
+
+        return this.lastData = get, get;
+    }
+
     async findByUserId({ id }: { id: string }){
-        if(!id) return new Error("id not defined");
+        if(!id) return new Error("id required");
 
         let get = await this.controller.byUserId(id);
         if(get instanceof Error) return new Error(get.message);
@@ -26,7 +35,7 @@ export class OtpCodeRespository {
     }
 
     async findByTaskFirsh({ taskId }: { taskId: string }){
-        if(!taskId) return new Error("task not defined");
+        if(!taskId) return new Error("task required");
 
         let get = await this.controller.byTask(taskId);
         if(get instanceof Error) return new Error(get.message);
@@ -39,7 +48,7 @@ export class OtpCodeRespository {
     }
 
     async invalidateCode({ id }: { id: string }){
-        if(!id) return new Error("id not defined");
+        if(!id) return new Error("id required");
 
         let invalidate = await this.controller.break(id);
         if(invalidate instanceof Error) return new Error(invalidate.message);
@@ -63,6 +72,15 @@ class OtpCode {
         return new Promise(async resolve => {
             let get = await Prisma.otp.findFirst({ where: { code }});
 
+            if(!get) return resolve(new Error("invalid code"));
+
+            return resolve(get);
+        });
+    }
+
+    byCodeUrl(code: string): Promise<Error | Otp>{
+        return new Promise(async resolve => {
+            let get = await Prisma.otp.findFirst({ where: { codeUrl: code }});
             if(!get) return resolve(new Error("invalid code"));
 
             return resolve(get);

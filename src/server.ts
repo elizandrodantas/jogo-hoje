@@ -1,8 +1,8 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { config } from 'dotenv';
 
-import { RouterIndex } from './routers';
-import { RouterSecure } from './routers/secure';
+import { RouterIndex } from './routers/index.routes';
+import { RouterSecure } from './routers/secure.routes';
 
 var app = express();
           config();

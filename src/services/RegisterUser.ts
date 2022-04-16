@@ -1,4 +1,4 @@
-import { UserBasicRepository } from "../repository/UserBasicRepository";
+import { UserBasicRepository } from "../repositories/UserBasicRepository";
 import interfaceBodySendMailRegister, { iResponseSendMailRegister } from '../interfaces/SendMailRegister';
 import { OtpCore } from "../core/CoreOtp";
 

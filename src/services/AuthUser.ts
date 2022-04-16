@@ -1,6 +1,6 @@
 import { JsonWebToken } from "../core/JsonWebToken";
 import { Prisma } from "../database";
-import { UserBasicRepository } from "../repository/UserBasicRepository";
+import { UserBasicRepository } from "../repositories/UserBasicRepository";
 
 import moment from "moment";
 import { User } from "@prisma/client";

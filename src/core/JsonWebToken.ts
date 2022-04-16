@@ -4,11 +4,11 @@ import { refresh, User } from "@prisma/client";
 import { Prisma } from '../database';
 import { decode, sign, verify } from 'jsonwebtoken';
 import { v4 as uuidv4, validate as validateUUID } from 'uuid';
-import { UserBasicRepository } from '../repository/UserBasicRepository';
+import { UserBasicRepository } from '../repositories/UserBasicRepository';
 
 import uid from 'uid2';
 import moment from 'moment';
-import { RefreshTokenRepository } from '../repository/RefreshTokenRespository';
+import { RefreshTokenRepository } from '../repositories/RefreshTokenRespository';
 
 export type iDecodedJsonWebToken = {
     jti: string;
