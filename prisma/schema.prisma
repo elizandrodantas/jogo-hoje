@@ -18,8 +18,8 @@ model User {
   account_active    Boolean @default(true)
 
   confirmations     Confirmation[]
-  events            Event?
-  event_person      EventPersons?
+  events            Event[]
+  event_person      EventPersons[]
 
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt

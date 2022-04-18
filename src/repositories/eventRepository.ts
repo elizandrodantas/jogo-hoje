@@ -1,4 +1,5 @@
-import { Event } from "@prisma/client";
+import { Event, EventPersons, Prisma as IPrisma } from "@prisma/client";
+import moment from "moment";
 import { Prisma } from "../database";
 
 export type iPayloadCreateEvent = {
@@ -13,6 +14,26 @@ export type iPayloadCreateEvent = {
     }
 }
 
+export type iPayloadAdvanceDataBase = {
+    include?: IPrisma.EventInclude;
+    select?: IPrisma.EventSelect
+}
+
+export type iPayloadQueryAccept = {
+    title: string;
+    description: string;
+    location: string;
+    date: string;
+}
+
+export type iPayloadUpdateEventData = {
+    description: string;
+    date: string;
+    location: string;
+    max_person: number;
+    min_person: number;
+}
+
 export class EventsRepository {
     private controller: Events = new Events();
     util: util = new util();
@@ -23,7 +44,7 @@ export class EventsRepository {
     async create({ title, event, userId, description }: iPayloadCreateEvent){
         if(!title || !event || !userId) return new Error("parameteres invalid");
 
-        let { date, location, max_person, min_person } = event;
+        let { date, location } = event;
         if(!date || !location) return new Error("data event required");
 
         let create = await this.controller.new({ title, event, userId, description });
@@ -32,13 +53,50 @@ export class EventsRepository {
         return this.lastData = create, create;
     }
 
-    async listEventsUser({ userId}: { userId: string }){
+    async createEventPerson(userId: string, eventId: string){
+        if(!userId || !eventId) return new Error("client id and event id required");
+
+        let create = await this.controller.newPersonInEvent(userId, eventId);
+        if(create instanceof Error) return new Error(create.message);
+
+        return create;
+    }
+
+    async removeEventPerson(userId: string, eventId: string){
+        if(!userId || !eventId) return new Error("client id and event id required");
+
+        let remove = await this.controller.removeEventPerson(userId, eventId);
+        if(remove instanceof Error) return new Error(remove.message);
+
+        return { status: true, userId, eventId }
+    }
+
+    async findById(id: string, includes?: IPrisma.EventInclude){
+        if(!id) return new Error("event id required");
+
+        let get = await this.controller.byId(id, includes);
+        if(get instanceof Error) return new Error(get.message);
+
+        return this.lastData = get, get;
+    }
+
+    async findQuery(where: iPayloadQueryAccept, options?: iPayloadAdvanceDataBase){
+        if(!where) return new Error("query required");
+
+        let newWhere = this.util.acceptQuery(where);
+
+        let get = await this.controller.queryEvent(newWhere, options);
+        if(get instanceof Error) return new Error(get.message);
+
+        return this.lastDataMany = get, get;
+    }
+
+    async listEventsUser({ userId, includes }: { userId: string; includes?: IPrisma.EventInclude }){
         if(!userId) return new Error("client id required");
 
-        let list = await this.controller.listUser(userId);
-        if(list instanceof Error) return new Error(list.message);
+        let list = await this.controller.listEventUser(userId, includes);
 
-        return list;
+        return this.lastDataMany = list, list;
     }
 }
 
@@ -65,22 +123,121 @@ class Events {
         });
     }
 
-    listUser(userId: string): Promise<Error | Event[]>{
+    newPersonInEvent(userId: string, eventId: string): Promise<Error | EventPersons>{
         return new Promise(async resolve => {
             try{
+                let create = await Prisma.eventPersons.create({
+                    data: {
+                        eventId,
+                        userId
+                    }
+                });
+
+                if(!create) return resolve(new Error("error add person in event"));
+
+                return resolve(create);
+            }catch(e){ return resolve(new Error("error add person in event")) }
+        });
+    }
+
+    removeEventPerson(userId: string, eventId: string){
+        return new Promise(async resolve => {
+            try{
+                let remove = await Prisma.eventPersons.deleteMany({
+                    where: {
+                        userId,
+                        eventId
+                    }
+                });
+
+                if(!remove) return resolve(new Error("error remove event person"));
+
+                return resolve(remove);
+            }catch(e){ return resolve(new Error("error remove event person")) }
+        });
+    }
+
+    listEventUser(userId: string, includes?: IPrisma.EventInclude): Promise<Event[]>{
+        return new Promise(async resolve => {
+            let list = await Prisma.event.findMany({
+                where: { event_user_created: userId },
+                include: includes
+            });
+            return resolve(list);
+        });
+    }
+
+    byId(id: string, includes?: IPrisma.EventInclude): Promise<Error | Event>{
+        return new Promise(async resolve => {
+            let get = await Prisma.event.findFirst({ where: { id }, include: includes });
+            if(!get) return resolve(new Error("event not found"));
+
+            return resolve(get);
+        });
+    }
+
+    byName(name: string, includes?: IPrisma.EventInclude): Promise<Event[]>{
+        return new Promise(async resolve => {
+            try{
+                let get = await Prisma.event.findMany({
+                    where: {
+                        title: { contains: name }
+                    },
+                    include: includes
+                });
+                return resolve(get);
+            }catch(e){ return [] }
+        });
+    }
+
+    queryEvent(where: iPayloadQueryAccept, options?: iPayloadAdvanceDataBase): Promise<Error | Event[]>{
+        return new Promise(async resolve => {
+            try{
+                let json = {} as any;
+
+                if(where.title) json.title = { contains: where.title }
+                if(where.date)
+                    if(moment(where.date).isValid())
+                        json.event_date = moment(where.date).unix();
+                if(where.description) json.description = { contains: where.description }
+                if(where.location) json.location = { contains: where.location }
+
+                json.event_status = true;
+
                 let list = await Prisma.event.findMany({
-                    where: { event_user_created: userId },
-                    include: { persons: true }
+                    where: json,
+                    ...options
                 });
 
                 return resolve(list);
-            }catch(e){ resolve(new Error("error get events")) }
+            }catch(e){ return resolve(new Error("error query event data")) }
         });
     }
 }
 
 class util {
+    arrayAcceptQuery = ["title", "description", "location", "date"];
+    arrayAcceptUpdate = ["description", "date", "location", "max_person", "min_person"];
+
     justNumber(string: string){
         return parseInt(string.replace(/[^0-9]/g, ''));
     }
+
+    personInEvent(data: EventPersons[], userId: string){
+        try{
+            return data.find(e => e.userId === userId);
+        }catch(e){ return undefined; }
+    }
+
+    acceptQuery(all: any){
+        Object.keys(all).forEach(e => {
+            if(!this.arrayAcceptQuery.includes(e)){
+                delete all[e];
+            }
+        });
+
+        return all;
+    }
+
+    acceptUpdate(all: any){}
 }

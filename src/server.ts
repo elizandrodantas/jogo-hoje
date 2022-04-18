@@ -19,4 +19,8 @@ app.use((error: any, request: Request, response: Response, next: NextFunction) =
     return response.status(404).json({ error: "page not found" });
 });
 
+app.use((request: Request, response: Response, next: NextFunction) => {
+    return response.status(404).json({ error: "page not found" });
+});
+
 app.listen(3000, () => console.log(`✅ SERVER STARTING SUCCESSFUL`))
