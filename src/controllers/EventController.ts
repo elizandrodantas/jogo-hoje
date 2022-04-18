@@ -23,7 +23,15 @@ export class EventController {
         return response.status(200).json(update);
     }
 
-    async delete(request: Request, response: Response){}
+    async delete(request: Request, response: Response){
+        let { event } = request.body as { event: string },
+        { client_id } = request.decoded as { client_id: string }
+
+        let remove = await new EventService().deleteEvent(event, client_id);
+        if(remove instanceof Error) return response.status(400).json({ error: remove.message });
+
+        return response.status(200).json(remove);
+    }
 
     async list(request: Request, response: Response){
         let { client_id } = request.decoded as { client_id: string };

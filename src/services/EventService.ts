@@ -89,6 +89,10 @@ export class EventService {
             });
         if(get instanceof Error) return new Error(get.message);
 
+        let { event_status } = get;
+
+        if(!event_status) return new Error("event does not exist");
+
         return get;
     }
 
@@ -105,7 +109,7 @@ export class EventService {
         let { event_date, event_max_person, event_status, persons, event_user_created } = findEvent;
         
         if(event_user_created === userId) return new Error("you are the event creator");
-        if(!event_status) return new Error("canceled event");
+        if(!event_status) return new Error("event does not exist");
         if(event_max_person && persons.length >= event_max_person) return new Error("maximum number of people at the event");
         if(moment().unix() > moment.unix(event_date).unix()) return new Error("finished event");
         
@@ -175,9 +179,42 @@ export class EventService {
 
         return {
             status: true,
-            updated: moment().toISOString(),
+            updated_at: moment().toISOString(),
             updated_data: controllerEvent.util.acceptUpdate(data),
             event_data: updated
         };
+    }
+
+    async deleteEvent(eventId: string, userId: string){
+        if(!eventId) return new Error("event id required");
+
+        let controllerEvent = new EventsRepository(), controllerNotify = new CoreNotify();
+
+        let findEvent = await controllerEvent.findById(eventId, { persons: { include: { user: { select: { 
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+            account_active: true
+        }}}} }) as Event & { persons: EventPersons & {user: User}[]};
+        if(findEvent instanceof Error) return new Error(findEvent.message);
+
+        let { event_status, event_user_created, persons } = findEvent;
+        if(!event_status) return new Error("event does not exist");
+
+        if(event_user_created !== userId) return new Error("only the creator can remove the event");
+
+        let remove = await controllerEvent.desableEvent(eventId);
+        if(remove instanceof Error) return new Error(remove.message);
+
+        Promise.all([
+            controllerNotify.eventRemove(findEvent, persons)
+        ]);
+
+        return {
+            status: true,
+            removed_at: moment().toISOString(),
+            eventId
+        }
     }
 }

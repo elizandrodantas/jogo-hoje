@@ -13,5 +13,8 @@ export default {
     update_event: {
         subject: "Seu evento foi atualizado!",
     },
+    remove_event: {
+        subject: "Seu evento removido!",
+    },
     url: APP_URL + '/auth/confirm/'
 }

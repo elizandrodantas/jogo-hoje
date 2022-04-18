@@ -137,6 +137,15 @@ export class EventsRepository {
 
         return this.lastData = update, update;
     }
+
+    async desableEvent(eventId: string){
+        if(!eventId) return new Error("event id required");
+
+        let remove = await this.controller.depreded(eventId);
+        if(remove instanceof Error) return new Error(remove.message);
+
+        return remove;
+    }
 }
 
 class Events {
@@ -199,7 +208,7 @@ class Events {
     listEventUser(userId: string, includes?: IPrisma.EventInclude): Promise<Event[]>{
         return new Promise(async resolve => {
             let list = await Prisma.event.findMany({
-                where: { event_user_created: userId },
+                where: { event_user_created: userId, event_status: true },
                 include: includes
             });
             return resolve(list);
@@ -255,6 +264,21 @@ class Events {
 
                 return resolve(update);
             }catch(e){ return resolve(new Error("error update event")) }
+        });
+    }
+
+    depreded(id: string): Promise<Error | Event>{
+        return new Promise(async resolve => {
+            try{
+                let depreded = await Prisma.event.update({
+                    where: { id },
+                    data: { event_status: false }
+                });
+
+                if(!depreded) return resolve(new Error("error remove event"));
+
+                return resolve(depreded);
+            }catch(e){return resolve(new Error("error remove event"))}
         });
     }
 }
