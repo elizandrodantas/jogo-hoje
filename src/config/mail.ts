@@ -10,5 +10,8 @@ export default {
     register: {
         subject: "Bem Vindo, {name}"
     },
+    update_event: {
+        subject: "Seu evento foi atualizado!",
+    },
     url: APP_URL + '/auth/confirm/'
 }

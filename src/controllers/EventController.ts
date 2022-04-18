@@ -14,12 +14,15 @@ export class EventController {
     }
 
     async edit(request: Request, response: Response){
-        let { event, data } = request.body as { event: string; data: iPayloadUpdateEventData};
+        let { event, data } = request.body as { event: string; data: iPayloadUpdateEventData},
+        { client_id } = request.decoded as { client_id: string }
 
-        let update = await new EventService().updateEvent(event, data);
-        if(update instanceof Error) return new Error("");
+        let update = await new EventService().updateEvent(event, client_id, data);
+        if(update instanceof Error) return response.status(400).json({ error: update.message });
+
+        return response.status(200).json(update);
     }
-    
+
     async delete(request: Request, response: Response){}
 
     async list(request: Request, response: Response){

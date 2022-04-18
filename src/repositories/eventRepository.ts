@@ -1,5 +1,5 @@
-import { Event, EventPersons, Prisma as IPrisma } from "@prisma/client";
-import moment from "moment";
+import { Event, EventPersons, Prisma as IPrisma, User } from "@prisma/client";
+import moment, { max } from "moment";
 import { Prisma } from "../database";
 
 export type iPayloadCreateEvent = {
@@ -32,6 +32,10 @@ export type iPayloadUpdateEventData = {
     location: string;
     max_person: number;
     min_person: number;
+}
+
+export interface iPayloadPersonWithUser extends Event {
+    persons: EventPersons & {user: User}
 }
 
 export class EventsRepository {
@@ -85,7 +89,18 @@ export class EventsRepository {
 
         let newWhere = this.util.acceptQuery(where);
 
-        let get = await this.controller.queryEvent(newWhere, options);
+        let json = {} as any;
+
+        if(newWhere.title) json.title = { contains: newWhere.title }
+        if(newWhere.date){
+            let newDate = moment(newWhere.date, 'YYYY-MM-DD hh:mm:ss');
+            if(moment(newDate).isValid()) json.event_date = moment(newDate).unix();
+        }
+        if(newWhere.description) json.description = { contains: newWhere.description }
+        if(newWhere.location) json.location = { contains: newWhere.location }
+        json.event_status = true;
+
+        let get = await this.controller.queryEvent(json, options);
         if(get instanceof Error) return new Error(get.message);
 
         return this.lastDataMany = get, get;
@@ -97,6 +112,30 @@ export class EventsRepository {
         let list = await this.controller.listEventUser(userId, includes);
 
         return this.lastDataMany = list, list;
+    }
+
+    async update(eventId: string, data: iPayloadUpdateEventData, options?: iPayloadAdvanceDataBase){
+        if(!eventId) return new Error("event id required");
+
+        let json = {} as any;
+
+        if(data.description) json.description = data.description;
+        if(data.date) 
+                json.event_date = moment(data.date).unix();
+        if(data.location) json.event_location = data.location
+        if(data.min_person && typeof data.min_person === "number") json.event_min_person = data.min_person
+        if(data.max_person && typeof data.max_person === "number"){
+            if(data.min_person && typeof data.min_person === "number"){
+                if(data.max_person > data.min_person) json.event.max_person = data.max_person;
+            }else{
+                json.event_max_person = data.max_person;
+            }
+        }
+
+        let update = await this.controller.updateEvent(eventId, json);
+        if(update instanceof Error) return new Error(update.message);
+
+        return this.lastData = update, update;
     }
 }
 
@@ -193,24 +232,29 @@ class Events {
     queryEvent(where: iPayloadQueryAccept, options?: iPayloadAdvanceDataBase): Promise<Error | Event[]>{
         return new Promise(async resolve => {
             try{
-                let json = {} as any;
-
-                if(where.title) json.title = { contains: where.title }
-                if(where.date)
-                    if(moment(where.date).isValid())
-                        json.event_date = moment(where.date).unix();
-                if(where.description) json.description = { contains: where.description }
-                if(where.location) json.location = { contains: where.location }
-
-                json.event_status = true;
-
                 let list = await Prisma.event.findMany({
-                    where: json,
+                    where: where,
                     ...options
                 });
 
                 return resolve(list);
             }catch(e){ return resolve(new Error("error query event data")) }
+        });
+    }
+
+    updateEvent(id: string, data: iPayloadUpdateEventData, options?: iPayloadAdvanceDataBase): Promise<Error | Event>{
+        return new Promise(async resolve => {
+            try{
+                let update = await Prisma.event.update({
+                    where: { id },
+                    data,
+                    ...options
+                });
+
+                if(!update) return resolve(new Error("error update event"));
+
+                return resolve(update);
+            }catch(e){ return resolve(new Error("error update event")) }
         });
     }
 }
@@ -229,7 +273,7 @@ class util {
         }catch(e){ return undefined; }
     }
 
-    acceptQuery(all: any){
+    acceptQuery(all: any): iPayloadQueryAccept{
         Object.keys(all).forEach(e => {
             if(!this.arrayAcceptQuery.includes(e)){
                 delete all[e];
@@ -239,5 +283,13 @@ class util {
         return all;
     }
 
-    acceptUpdate(all: any){}
+    acceptUpdate(all: any): iPayloadUpdateEventData{
+        Object.keys(all).forEach(e => {
+            if(!this.arrayAcceptUpdate.includes(e)){
+                delete all[e];
+            }
+        })
+
+        return all;
+    }
 }

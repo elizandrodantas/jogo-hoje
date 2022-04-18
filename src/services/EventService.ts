@@ -1,5 +1,6 @@
-import { Event, EventPersons } from "@prisma/client";
+import { Event, EventPersons, User } from "@prisma/client";
 import moment from "moment";
+import { CoreNotify } from "../core/CoreNotify";
 
 import { iPayloadCreateEvent, EventsRepository, iPayloadQueryAccept, iPayloadUpdateEventData } from "../repositories/eventRepository";
 
@@ -11,6 +12,7 @@ export class EventService {
 
         let { date, location, max_person, min_person } = event, controller = new EventsRepository();
         if(!location || location.length < 3) return new Error("location invalid");
+        if(description && description.length < 3) return new Error("illegible description");
         if(max_person && typeof max_person !== "number") max_person = controller.util.justNumber(max_person);
         if(min_person && typeof min_person !== "number") min_person = controller.util.justNumber(min_person);
 
@@ -100,10 +102,12 @@ export class EventService {
         let findEvent = await controllerEvent.findById(eventId, { persons: true }) as Event & { persons: EventPersons[]};
         if(findEvent instanceof Error) return new Error(findEvent.message);
         
-        let { event_date, event_max_person, event_status, persons } = findEvent;
+        let { event_date, event_max_person, event_status, persons, event_user_created } = findEvent;
+        
+        if(event_user_created === userId) return new Error("you are the event creator");
         if(!event_status) return new Error("canceled event");
         if(event_max_person && persons.length >= event_max_person) return new Error("maximum number of people at the event");
-        if(moment().unix() > moment.unix(event_date).unix() ) return new Error("event has already started");
+        if(moment().unix() > moment.unix(event_date).unix()) return new Error("finished event");
         
         if(watch === "going"){
             if(controllerEvent.util.personInEvent(persons, userId)) return new Error("user is already at the event");
@@ -124,9 +128,56 @@ export class EventService {
         return { status: false, eventId, userId, error: "action not performed" }
     }
 
-    async updateEvent(eventId: string, data: iPayloadUpdateEventData){
+    async updateEvent(eventId: string, userId: string, data: iPayloadUpdateEventData){
         if(!eventId) return new Error("event id required");
 
-        return eventId
+        let controllerEvent = new EventsRepository(), controllerNotify = new CoreNotify();
+
+        let findEvent = await controllerEvent.findById(eventId, { persons: { include: { user: { select: { 
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+            account_active: true
+        }}}} }) as Event & { persons: EventPersons & {user: User}[]};
+        if(findEvent instanceof Error) return new Error(findEvent.message);
+
+        let { date, description, location, max_person, min_person } = controllerEvent.util.acceptUpdate(data);
+        let { event_status, event_user_created, event_date, persons } = findEvent;
+
+        if(event_user_created !== userId) return new Error("no permission to change event");
+        if(!event_status) return new Error("event does not exist");
+        if(moment().unix() > moment.unix(event_date).unix()) return new Error("finished event");
+
+        let newDate = null;
+
+        if(description && description.length < 3) return new Error("illegible description");
+        if(date){
+            newDate = moment(date, 'YYYY-MM-DD hh:mm:ss');
+            if(!moment(newDate).isValid())return new Error("date format invalid");
+            if(moment(newDate).unix() < moment().unix()) return new Error("this date is invalid");
+            data.date = newDate.toISOString();
+        }
+        if(location && location.length < 3) return new Error("location invalid");
+
+        if(max_person && typeof max_person !== "number") max_person = controllerEvent.util.justNumber(max_person);
+        if(min_person && typeof min_person !== "number") min_person = controllerEvent.util.justNumber(min_person);
+
+        if(min_person && min_person < 1) return new Error("min person invalid");
+        if(max_person && min_person && min_person > max_person) return new Error("minimum number of people must be less than the maximum number of people"); 
+
+        let updated = await controllerEvent.update(eventId, data);
+        if(updated instanceof Error) return new Error(updated.message);
+
+        Promise.all([
+            controllerNotify.eventUpdate(updated, persons)
+        ]);
+
+        return {
+            status: true,
+            updated: moment().toISOString(),
+            updated_data: controllerEvent.util.acceptUpdate(data),
+            event_data: updated
+        };
     }
 }
