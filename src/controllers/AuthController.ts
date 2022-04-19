@@ -7,7 +7,7 @@ export class AuthUserController {
 
         let execute = await new AuthUser().auth(data);
         if(execute instanceof Error) return response.status(401).json({ error: execute.message });
-
+        
         return response.status(200).json(execute);
     }
 

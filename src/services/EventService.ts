@@ -46,6 +46,16 @@ export class EventService {
         }
     }
 
+    async listAll(){
+        let list = await new EventsRepository().list() as Event[];
+        
+        return {
+            status: true,
+            count: list.length,
+            data: list
+        }
+    }
+
     async queryEvents(options: iPayloadQueryAccept){
         if(!options) return new Error("query required");
 
@@ -130,6 +140,14 @@ export class EventService {
         }
 
         return { status: false, eventId, userId, error: "action not performed" }
+    }
+
+    async listPersonAtEvent(userId: string){
+        if(!userId) return new Error("client id required");
+        
+        
+
+        return await new EventsRepository().personAtTheEvent(userId);
     }
 
     async updateEvent(eventId: string, userId: string, data: iPayloadUpdateEventData){

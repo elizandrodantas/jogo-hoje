@@ -48,6 +48,11 @@ type iOptionsHideData = {
     all_null?: boolean;
 }
 
+type iOptionsAdvancedUser = {
+    include?: PrismaClient.UserInclude,
+    select?: PrismaClient.UserSelect
+}
+
 export class UserBasicRepository {
     private controller: UserBasic = new UserBasic();
     util: util = new util();
@@ -71,19 +76,19 @@ export class UserBasicRepository {
         return create;
     }
 
-    async findByUsername(username: string): Promise<Error | User>{
+    async findByUsername(username: string, options?: iOptionsAdvancedUser): Promise<Error | User>{
         if(!username) return new Error("username not defined");
 
-        let user = await this.controller.byUsername(username);
+        let user = await this.controller.byUsername(username, options);
         if(user instanceof Error) return new Error(user.message);
 
         return this.lastData = user, user;
     }
 
-    async findByEmail(email: string): Promise<Error | User>{
+    async findByEmail(email: string, options?: iOptionsAdvancedUser): Promise<Error | User>{
         if(!email) return new Error("email not defined");
 
-        let user = await this.controller.byEmail(email);
+        let user = await this.controller.byEmail(email, options);
         if(user instanceof Error) return new Error(user.message);
 
         return this.lastData = user, user;
@@ -114,9 +119,9 @@ class UserBasic {
         });
     }
 
-    byUsername(username: string): Promise<User | Error>{
+    byUsername(username: string, options?: iOptionsAdvancedUser): Promise<User | Error>{
         return new Promise(async resolve => {
-            let get = await Prisma.user.findFirst({ where: { username }});
+            let get = await Prisma.user.findFirst({ where: { username }, ...options});
             if(!get) return resolve(new Error("user not found"));
 
             return resolve(get);
@@ -132,9 +137,9 @@ class UserBasic {
         });
     }
 
-    byEmail(email: string): Promise<User | Error>{
+    byEmail(email: string, options?: iOptionsAdvancedUser): Promise<User | Error>{
         return new Promise(async resolve => {
-            let get = await Prisma.user.findFirst({ where: { email }});
+            let get = await Prisma.user.findFirst({ where: { email }, ...options});
             if(!get) return resolve(new Error("user not found"));
 
             return resolve(get);
@@ -203,7 +208,7 @@ class util {
 
     transformSecureShowDataUserMany(){}
     
-    private hideMaskMail(mail: string): string{
+    hideMaskMail(mail: string): string{
         let [user, domain] = mail.split('@'), c = Math.floor(user.length / 2), r = user.substring(0, c), n = "";
     
         for(let i = 0; i < user.length - r.length;i++){
@@ -213,7 +218,7 @@ class util {
         return `${user.substring(0, c) + n}@${domain}`;
     }
 
-    private hideMaskHalf(string: string){
+    hideMaskHalf(string: string){
         let c = string.length,
             fair = Math.floor(70 * c / 100),
             diff = Math.floor(c - fair),

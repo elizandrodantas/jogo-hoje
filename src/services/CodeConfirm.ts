@@ -29,7 +29,7 @@ export class CodeConfirm {
 
         let { email, confirmations } = await new UserBasicRepository().findById(userId, { confirmations: true }) as User & { confirmations: Confirmation[] }
 
-        if(controllerConfirmation.util.duplicationVerify(confirmations, "email", email)) return new Error("mail already confirmed");
+        if(controllerConfirmation.util.alreadyConfirmation(confirmations, "email", email)) return new Error("mail already confirmed");
 
         Promise.all([
             controller.invalidateCode({ id }),

@@ -1,9 +1,9 @@
-import { Event, EventPersons, User } from "@prisma/client";
+import { Event } from "@prisma/client";
 
 import bodyIntUpdate from "../interfaces/updateEventNotify";
 import bodyIntRemove from "../interfaces/removeEventNotify";
 import config from '../config/mail';
-import { SendMailCore } from "../middleware/SendMail";
+import { SendMailCore } from "./SendMail";
 import moment from "moment";
 
 export class CoreNotify {

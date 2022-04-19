@@ -57,7 +57,7 @@ class ConfirmationUser {
 }
 
 class util {
-    duplicationVerify(data: Confirmation[], type: string, meta: string){
+    alreadyConfirmation(data: Confirmation[], type: string, meta: string){
         return data.find(e => e.type === type && e.description?.includes(meta));
     }
 }

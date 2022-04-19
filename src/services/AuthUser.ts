@@ -1,9 +1,9 @@
 import { JsonWebToken } from "../core/JsonWebToken";
-import { Prisma } from "../database";
 import { UserBasicRepository } from "../repositories/UserBasicRepository";
 
 import moment from "moment";
-import { User } from "@prisma/client";
+import { Confirmation, User } from "@prisma/client";
+import { ConfirmationRepository } from "../repositories/ConfirmationRepo";
 
 type iPayloadAuth = {
     username: string;
@@ -22,15 +22,17 @@ export class AuthUser {
         if(username.length < 3) return new Error("username must contain 6 characters or more");
         if(password.length < 6) return new Error("password must contain 6 characters or more");
 
-        let user = await Prisma.user.findFirst({
-            where: { username }
-        });
-        if(!user) return new Error("username or password invalid");
+        let RepoUser = new UserBasicRepository(), RepoConfirm = new ConfirmationRepository();
 
-        let { password: hash, account_active, name, id } = user;
+        let user = await RepoUser.findByUsername(username, {include: { confirmations: true }}) as User & {confirmations: Confirmation[]};
+        if(user instanceof Error) return new Error("username or password invalid");
 
-        if(!new UserBasicRepository().util.compareHashPassword(password, hash)) return new Error("username or password invalid");
+        let { password: hash, account_active, name, id, email, confirmations } = user;
+
+        if(!RepoUser.util.compareHashPassword(password, hash)) return new Error("username or password invalid");
         if(!account_active) return new Error("account blocked");
+
+        if(!RepoConfirm.util.alreadyConfirmation(confirmations, 'email', email)) return new Error("check your email and try again: [id: "+ id +"; email: "+ RepoUser.util.hideMaskMail(email) +"]");
 
         let JWT = new JsonWebToken();
 

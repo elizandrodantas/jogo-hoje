@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { iPayloadUpdateEventData } from "../repositories/eventRepository";
 import { EventService } from "../services/EventService";
 
+import { validate as validateUUID } from 'uuid';
+
 export class EventController {
     async create(request: Request, response: Response){
         let { title, description, event } = request.body,
@@ -52,10 +54,18 @@ export class EventController {
     async eventData(request: Request, response: Response){
         let { id } = request.params;
 
-        let get = await new EventService().details(id);
+        if(id && validateUUID(id)){
+            let get = await new EventService().details(id);
+            if(get instanceof Error) return response.status(400).json({ error: get.message });
+
+            return response.status(200).json(get);
+        }
+
+        let get = await new EventService().listAll();
         if(get instanceof Error) return response.status(400).json({ error: get.message });
 
         return response.status(200).json(get);
+        
     }
 
     async watchEvent(request: Request, response: Response){
@@ -63,6 +73,15 @@ export class EventController {
         { event, watch_status } = request.body;
 
         let execute = await new EventService().personAtEvent(client_id, event, watch_status);
+        if(execute instanceof Error) return response.status(400).json({ error: execute.message });
+
+        return response.status(200).json(execute);
+    }
+
+    async watchList(request: Request, response: Response){
+        let { client_id } = request.decoded as { client_id: string };
+
+        let execute = await new EventService().listPersonAtEvent(client_id);
         if(execute instanceof Error) return response.status(400).json({ error: execute.message });
 
         return response.status(200).json(execute);

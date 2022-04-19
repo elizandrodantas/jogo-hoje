@@ -23,6 +23,9 @@ app.delete('/event',
 app.get('/event', 
     [ new ensuredAuthenticated().middler ],
     new EventController().list);
+app.get('/event/all', 
+    [ new ensuredAuthenticated().middler ],
+    new EventController().eventData);
 app.get('/event/q',
     [ new ensuredAuthenticated().middler ],
     new EventController().query)
@@ -31,7 +34,10 @@ app.get('/event/:id',
     new EventController().eventData);
 app.post('/event/watch',
     [ new ensuredAuthenticated().middler, new ensuredAuthenticated().session ],
-    new EventController().watchEvent);  
+    new EventController().watchEvent);
+app.get('/event/watch/list',
+    [ new ensuredAuthenticated().middler, new ensuredAuthenticated().session ],
+    new EventController().watchList);  
 
 
 export { app as RouterSecure }

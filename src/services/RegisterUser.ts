@@ -3,7 +3,7 @@ import interfaceBodySendMailRegister, { iResponseSendMailRegister } from '../int
 import { OtpCore } from "../core/CoreOtp";
 
 import { v4 as uuidv4 } from 'uuid';
-import { SendMailCore } from "../middleware/SendMail";
+import { SendMailCore } from "../core/SendMail";
 
 import config from '../config/mail';
 

@@ -57,6 +57,10 @@ export class EventsRepository {
         return this.lastData = create, create;
     }
 
+    async list(){
+        return await this.controller.findAll();
+    }
+
     async createEventPerson(userId: string, eventId: string){
         if(!userId || !eventId) return new Error("client id and event id required");
 
@@ -112,6 +116,14 @@ export class EventsRepository {
         let list = await this.controller.listEventUser(userId, includes);
 
         return this.lastDataMany = list, list;
+    }
+
+    async personAtTheEvent(userId: string){
+        if(!userId) return new Error("client id required");
+
+        let list = await this.controller.personAndEvent(userId);
+        
+        return list;
     }
 
     async update(eventId: string, data: iPayloadUpdateEventData, options?: iPayloadAdvanceDataBase){
@@ -279,6 +291,26 @@ class Events {
 
                 return resolve(depreded);
             }catch(e){return resolve(new Error("error remove event"))}
+        });
+    }
+
+    personAndEvent(userId: string){
+        return new Promise(async resolve => {
+            let list = await Prisma.event.findMany({ where: { persons: { some: { userId }}}, include: { _count: true, persons: { include: { user: { select: { username: true }}}}}});
+
+            return resolve(list);
+        });
+    }
+
+    findAll(): Promise<Event[]>{
+        return new Promise(async resolve => {
+            try{
+                let list = await Prisma.event.findMany({ where: { event_status: true, event_date: {
+                    gte: moment().unix()
+                } }});
+
+                return resolve(list);
+            }catch(e){ resolve([]) }
         });
     }
 }
