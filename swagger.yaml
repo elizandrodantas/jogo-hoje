@@ -1,0 +1,665 @@
+swagger: '2.0'
+
+info:
+  version: 1.0.0
+  title: Jogo Hoje
+  contact:
+    email: dantaspm@icloud.com
+  license:
+    name: MIT
+    url: https://github.com/elizandrodantas/jogo-hoje/blob/main/LICENSE
+
+tags:
+- name: auth
+- name: register
+- name: api
+
+paths:
+  /auth:
+    post:
+      tags:
+      - auth
+      description: login com usuario e senha
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth_params'
+      responses:
+        200:
+          description: ok
+          schema: 
+            $ref: '#/definitions/auth_response'
+        401:
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/error'
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'
+
+  /auth/refresh-token:
+    get:
+      tags:
+      - auth
+      description: renovar o login no sistema com o refresh token
+      produces:
+      - application/json
+      parameters:
+      - name: authorization
+        in: header
+        description: Bearer {refresh-token}
+        required: true
+        type: string
+      responses:
+        200:
+          description: OK
+          schema:
+              $ref: '#/definitions/auth_response'
+        401:
+          description: unauthorized
+          schema:
+              $ref: '#/definitions/error'  
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'
+                 
+  /auth/u:
+    get:
+      tags:
+      - auth
+      description: sera consultado se ja existe cadastro
+      produces:
+      - application/json
+      parameters:
+      - name: username
+        in: query
+        description: consultar por usuario
+        type: string
+      - name: email
+        in: query
+        description: consultar por email
+        type: string
+      responses:
+        200:
+          description: ok
+          schema:
+              $ref: '#/definitions/user_data'
+        400:
+          description: error
+          schema:
+            $ref: '#/definitions/error'
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'
+            
+  /:
+    post:
+      tags: 
+        - register
+      description: registrar novo usaurio no sistema
+      produces: 
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/register_params'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/register_response'
+        400:
+          description: error
+          schema:
+            $ref: '#/definitions/error'
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'
+
+  /api/user-info:
+    get:
+      tags: 
+        - api
+      description: informações do usuario
+      produces: 
+        - application/json
+      parameters:
+        - name: authorization
+          required: true
+          in: header
+          description: Bearer {token}
+          type: string
+      responses:
+        200:
+          description: OK
+          schema:
+              $ref: '#/definitions/user_data'
+        401:
+          description: unauthorized
+          schema:
+              $ref: '#/definitions/error'
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'
+
+  /api/event/list:
+    get:
+      tags:
+        - api
+      description: busca por todos os eventos
+      produces:
+        - application/json
+      parameters:
+          - name: authorization
+            required: true
+            in: header
+            description: Bearer {token}
+            type: string
+      responses:
+        200:
+          description: OK
+          schema:
+              $ref: '#/definitions/event_list_response'
+        401:
+          description: unauthorized
+          schema:
+              $ref: '#/definitions/error'
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'
+  /api/event/watch/list:
+    get:
+      tags:
+        - api
+      description: busca por eventos que usuario participa
+      produces:
+        - application/json
+      parameters:
+          - name: authorization
+            required: true
+            in: header
+            description: Bearer {token}
+            type: string
+      responses:
+        200:
+          description: OK
+          schema:
+              $ref: '#/definitions/event_watch_list_response'
+        401:
+          description: unauthorized
+          schema:
+              $ref: '#/definitions/error'
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'
+  /api/event/watch:
+    post:
+      tags:
+        - api
+      description: adiciona e remove usuario de um evento
+      produces:
+        - application/json
+      parameters:
+          - name: authorization
+            required: true
+            in: header
+            description: Bearer {token}
+            type: string
+          - in: body
+            name: body
+            required: true
+            schema:
+              $ref: '#/definitions/event_watch_params'
+      responses:
+        200:
+          description: OK
+          schema:
+              $ref: '#/definitions/event_watch_response'
+        401:
+          description: unauthorized
+          schema:
+              $ref: '#/definitions/error'
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'  
+  /api/event/q:
+    get:
+      tags:
+        - api
+      description: buscar por eventos
+      parameters: 
+        - name: authorization
+          required: true
+          in: header
+          description: Bearer {token}
+          type: string
+        - name: title
+          required: false
+          in: query
+          type: string
+        - name: description
+          required: false
+          in: query
+          type: string
+        - name: date
+          required: false
+          in: query
+          type: string
+      responses:
+        200:
+          description: OK
+          schema:
+              $ref: '#/definitions/event_list_response'
+        401:
+          description: unauthorized
+          schema:
+              $ref: '#/definitions/error'
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'
+  /api/event/{eventId}:
+    get:
+      tags:
+        - api
+      description: busca por eventos que usuario participa
+      produces:
+        - application/json
+      parameters:
+          - name: authorization
+            required: true
+            in: header
+            description: Bearer {token}
+            type: string
+      responses:
+        200:
+          description: OK
+          schema:
+              $ref: '#/definitions/event_watch_details_response'
+        401:
+          description: unauthorized
+          schema:
+              $ref: '#/definitions/error'
+        5xx: 
+          description: error 
+          schema:
+              $ref: '#/definitions/error'
+  /api/event:
+    post:
+      tags:
+        - api
+      description: criar um novo evento
+      produces:
+        - application/json
+      parameters:
+          - name: authorization
+            required: true
+            in: header
+            description: Bearer {token}
+            type: string
+          - in: body
+            name: body
+            required: true
+            schema:
+              $ref: '#/definitions/event_create_params'
+      responses:
+          200:
+            description: OK
+            schema:
+                $ref: '#/definitions/event_data'
+          401:
+            description: unauthorized
+            schema:
+                $ref: '#/definitions/error'
+          5xx: 
+            description: error 
+            schema:
+                $ref: '#/definitions/error'  
+    put:
+      tags:
+        - api
+      description: editar o evento (apenas o criador tem permição)
+      produces:
+        - application/json
+      parameters:
+          - name: authorization
+            required: true
+            in: header
+            description: Bearer {token}
+            type: string
+          - in: body
+            name: body
+            required: true
+            schema:
+              $ref: '#/definitions/event_put_pararms'
+      responses:
+          200:
+            description: OK
+            schema:
+                $ref: '#/definitions/event_put_response'
+          401:
+            description: unauthorized
+            schema:
+                $ref: '#/definitions/error'
+          5xx: 
+            description: error 
+            schema:
+                $ref: '#/definitions/error' 
+    delete: 
+      tags:
+        - api
+      description: remover um evento (apenas o criador tem permição)
+      produces:
+        - application/json
+      parameters:
+          - name: authorization
+            required: true
+            in: header
+            description: Bearer {token}
+            type: string
+          - in: body
+            name: body
+            required: true
+            schema:
+              $ref: '#/definitions/event_delete'
+      responses:
+          200:
+            description: OK
+            schema:
+                $ref: '#/definitions/event_delete_response'
+          401:
+            description: unauthorized
+            schema:
+                $ref: '#/definitions/error'
+          5xx: 
+            description: error 
+            schema:
+                $ref: '#/definitions/error'
+    
+definitions:
+  auth_params:
+    type: object
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+
+  register_params:
+    type: object
+    properties:
+      name:
+        type: string
+      username:
+        type: string
+      password:
+        type: string
+      email: 
+        type: string
+
+  auth_response: 
+    type: object
+    properties:
+      username:
+        type: string
+      name:
+        type: string
+      token:
+        type: string
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+      expire: 
+        type: integer
+
+  user_data:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      email:
+        type: string
+      username:
+        type: string
+      active:
+        type: boolean
+      created_at:
+        type: string
+
+  event_data:
+    type: object
+    properties:
+      id:
+        type: string
+      title:
+        type: string
+      description:
+        type: string
+      event_user_created:
+        type: string
+      event_date:
+        type: integer
+      event_status:
+        type: boolean
+      event_location:
+        type: string
+      event_min_person:
+        type: number
+      event_max_person:
+        type: number
+      created_at:
+        type: string
+      updated_at:
+        type: string
+
+  event_list_response: 
+    type: object
+    properties:
+      status:
+        type: boolean
+      count:
+        type: integer
+      data: 
+        type: array
+        items: 
+          $ref: '#/definitions/event_data'
+
+  event_watch_list_response:
+    type: array
+    items: 
+      $ref: '#/definitions/event_data'
+
+  event_watch_params:
+    type: object
+    properties:
+      event: 
+        type: string
+      watch_status:
+        type: string
+        enum:
+          - going
+          - unwatched
+
+  event_watch_response:
+    type: object
+    properties:
+      tatus:
+        type: boolean
+      count:
+        type: integer
+      data: 
+        type: array
+        items: 
+          $ref: '#/definitions/event_data'
+
+  event_watch_details_response:
+    type: object
+    properties:
+      id:
+        type: string
+      title:
+        type: string
+      description:
+        type: string
+      event_user_created:
+        type: string
+      event_date:
+        type: integer
+      event_status:
+        type: boolean
+      event_location:
+        type: string
+      event_min_person:
+        type: number
+      event_max_person:
+        type: number
+      created_at:
+        type: string
+      updated_at:
+        type: string
+      persons:
+        type: array
+        items:
+          $ref: '#/definitions/persons_array'
+
+  persons_array: 
+    type: object
+    properties:
+      id:
+        type: string
+      userId:
+        type: string
+      eventId:
+        type: string
+      created_at:
+        type: string
+      user: 
+        type: object
+        properties:
+          id:
+            type: string
+          name: 
+            type: string
+          username:
+            type: string
+          email:
+            type: string
+          account_active:
+            type: boolean
+  event_put_response:
+    type: object
+    properties: 
+      status: 
+        type: boolean
+      updated: 
+        type: string
+      updated_data: 
+        $ref: '#/definitions/data_update_accept'
+      event_data:
+        $ref: '#/definitions/event_data'
+
+  event_put_pararms:
+    type: object
+    properties:
+      event: 
+        type: string
+      data: 
+        $ref: '#/definitions/data_update_accept'
+
+  data_update_accept:
+    type: object
+    properties:
+      date: 
+        type: string
+      location: 
+        type: string
+      description: 
+        type: string
+      max_person: 
+        type: string
+      min_person: 
+        type: string
+
+  event_delete:
+    type: object
+    properties:
+      event:
+        type: string
+
+  event_delete_response:
+    type: object
+    properties:
+      status:
+        type: boolean
+      removed_at:
+        type: string
+      eventId:
+        type: string
+
+  register_response:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      email:
+        type: string
+      username:
+        type: string
+      account_active:
+        type: boolean
+      created_at:
+        type: string
+      updated_at:
+        type: string
+
+
+  event_create_params:
+    type: object
+    properties:
+      title:
+        type: string
+      description: 
+        type: string
+      event: 
+        type: object
+        properties:
+          date: 
+            type: string
+          location:
+            type: string
+          max_person:
+            type: integer
+          min_person:
+            type: integer
+      
+  error:
+    type: object
+    properties:
+      error: 
+        type: string
+
+# Added by API Auto Mocking Plugin
+host: localhost:3000
+schemes:
+ - http
