@@ -1,7 +1,7 @@
 <p align="center">
   <img src="https://static.vecteezy.com/system/resources/previews/007/101/706/large_2x/basketball-game-fixture-schedule-3d-illustration-calendar-organizer-with-ball-and-ring-icon-vector.jpg" width="154">
   <h1 align="center">Jogo Hoje :calendar:</h1>
-  <p align="center">API para facilitar o agendamento de jogos com amigos. O usuario pode confirmar participação em um jogo, como também agendar seu proximo jogo.<p>
+  <p align="center">API para facilitar o agendamento de jogos com amigos. O usuario pode confirmar participação em um jogo, como também agendar seu própria jogo.<p>
   <p align="center">
     <a href="https://www.npmjs.com/">
     	<img src="https://img.shields.io/badge/npm-v6.14.11-red.svg" />
